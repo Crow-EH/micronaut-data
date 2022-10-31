@@ -36,9 +36,7 @@ dependencies {
 
     testImplementation libs.testcontainers.r2dbc
 
-    if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
         testImplementation libs.drivers.r2dbc.oracle
-    }
     testImplementation libs.testcontainers.oracle
 
     // mariadb
