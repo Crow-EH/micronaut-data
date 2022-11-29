@@ -15,6 +15,7 @@ dependencies {
 
     implementation mn.micronaut.http
     implementation libs.micronaut.reactor
+    implementation mn.micronaut.context
 
     testImplementation projects.dataTck
     testImplementation mn.micronaut.test.spock
