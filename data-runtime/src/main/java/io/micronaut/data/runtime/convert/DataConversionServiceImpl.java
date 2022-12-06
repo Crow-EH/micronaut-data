@@ -18,7 +18,8 @@ package io.micronaut.data.runtime.convert;
 import io.micronaut.core.annotation.Internal;
 import io.micronaut.core.convert.ConversionContext;
 import io.micronaut.core.convert.ConversionService;
-import io.micronaut.core.convert.DefaultConversionService;
+import io.micronaut.core.convert.DefaultMutableConversionService;
+import io.micronaut.core.convert.MutableConversionService;
 import io.micronaut.core.convert.TypeConverter;
 
 import java.util.Optional;
@@ -34,19 +35,17 @@ import java.util.function.Function;
 @Internal
 final class DataConversionServiceImpl implements DataConversionService<DataConversionServiceImpl> {
 
-    private final DefaultConversionService internalConversionService = new DefaultConversionService();
+    private final MutableConversionService internalConversionService = new DefaultMutableConversionService();
     private final ConversionService sharedConversionService = ConversionService.SHARED;
 
     @Override
-    public <S, T> DataConversionServiceImpl addConverter(Class<S> sourceType, Class<T> targetType, Function<S, T> typeConverter) {
+    public <S, T> void addConverter(Class<S> sourceType, Class<T> targetType, Function<S, T> typeConverter) {
         internalConversionService.addConverter(sourceType, targetType, typeConverter);
-        return this;
     }
 
     @Override
-    public <S, T> DataConversionServiceImpl addConverter(Class<S> sourceType, Class<T> targetType, TypeConverter<S, T> typeConverter) {
+    public <S, T> void addConverter(Class<S> sourceType, Class<T> targetType, TypeConverter<S, T> typeConverter) {
         internalConversionService.addConverter(sourceType, targetType, typeConverter);
-        return this;
     }
 
     @Override

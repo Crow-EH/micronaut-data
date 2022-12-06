@@ -16,6 +16,7 @@
 package io.micronaut.data.runtime.convert;
 
 import io.micronaut.core.convert.ConversionService;
+import io.micronaut.core.convert.MutableConversionService;
 
 /**
  * The type of {@link ConversionService} that also include the Data project only registered converters.
@@ -24,5 +25,5 @@ import io.micronaut.core.convert.ConversionService;
  * @author Denis Stepanov
  * @since 3.1
  */
-public interface DataConversionService<Impl extends DataConversionService> extends ConversionService<Impl> {
+public interface DataConversionService<Impl extends DataConversionService> extends MutableConversionService {
 }

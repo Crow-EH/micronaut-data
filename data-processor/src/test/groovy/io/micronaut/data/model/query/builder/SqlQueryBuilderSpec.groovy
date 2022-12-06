@@ -22,6 +22,7 @@ import io.micronaut.data.model.Association
 import io.micronaut.data.model.PersistentEntity
 import io.micronaut.data.model.Sort
 import io.micronaut.data.model.entities.Bike
+import io.micronaut.data.model.entities.MappedEntityCar
 import io.micronaut.data.model.entities.Person
 import io.micronaut.data.model.entities.PersonAssignedId
 import io.micronaut.data.model.naming.NamingStrategies
@@ -115,13 +116,18 @@ interface MyRepository {
 
     void "test build queries with schema"() {
         when:"A select is encoded"
-        PersistentEntity entity = PersistentEntity.of(Car)
+        PersistentEntity entity = PersistentEntity.of(type)
         QueryModel q = QueryModel.from(entity)
         QueryBuilder encoder = new SqlQueryBuilder(Dialect.H2)
         def encoded = encoder.buildQuery(q)
 
         then:"The select includes the schema in the table name reference"
-        encoded.query == 'SELECT car_.`id`,car_.`name` FROM `ford`.`cars` car_'
+        encoded.query == query
+
+        where:
+        type            | query
+        Car             | 'SELECT car_.`id`,car_.`name` FROM `ford`.`cars` car_'
+        MappedEntityCar | 'SELECT mapped_entity_car_.`id`,mapped_entity_car_.`name` FROM `ford`.`cars` mapped_entity_car_'
     }
 
     void "test select embedded"() {
@@ -132,7 +138,7 @@ interface MyRepository {
         def encoded = encoder.buildQuery(q)
 
         expect:
-        encoded.query.startsWith('SELECT restaurant_.`id`,restaurant_.`name`,restaurant_.`address_street`,restaurant_.`address_zip_code`,restaurant_.`hq_address_street`,restaurant_.`hq_address_zip_code` FROM')
+        encoded.query.startsWith('SELECT restaurant_.`id`,restaurant_.`name`,restaurant_.`address_street`,restaurant_.`address_zip_code`,restaurant_.`hqaddress_street`,restaurant_.`hqaddress_zip_code` FROM')
 
     }
 
@@ -221,7 +227,7 @@ interface MyRepository {
         def result = encoder.buildInsert(AnnotationMetadata.EMPTY_METADATA, entity)
 
         expect:
-        result.query == 'INSERT INTO "restaurant" ("name","address_street","address_zip_code","hq_address_street","hq_address_zip_code") VALUES (?,?,?,?,?)'
+        result.query == 'INSERT INTO "restaurant" ("name","address_street","address_zip_code","hqaddress_street","hqaddress_zip_code") VALUES (?,?,?,?,?)'
         result.parameters.equals('1': 'name', '2':'address.street', '3':'address.zipCode', '4':'hqAddress.street', '5':'hqAddress.zipCode')
     }
 
@@ -232,7 +238,7 @@ interface MyRepository {
         def result = encoder.buildBatchCreateTableStatement(entity)
 
         expect:
-        result == 'CREATE TABLE "restaurant" ("id" BIGINT PRIMARY KEY AUTO_INCREMENT,"name" VARCHAR(255) NOT NULL,"address_street" VARCHAR(255) NOT NULL,"address_zip_code" VARCHAR(255) NOT NULL,"hq_address_street" VARCHAR(255),"hq_address_zip_code" VARCHAR(255));'
+        result == 'CREATE TABLE "restaurant" ("id" BIGINT PRIMARY KEY AUTO_INCREMENT,"name" VARCHAR(255) NOT NULL,"address_street" VARCHAR(255) NOT NULL,"address_zip_code" VARCHAR(255) NOT NULL,"hqaddress_street" VARCHAR(255),"hqaddress_zip_code" VARCHAR(255));'
     }
 
     void "test encode insert statement - custom mapping strategy"() {
@@ -399,7 +405,7 @@ interface MyRepository {
                     'SELECT shipment_."sp_country",shipment_."sp_city",shipment_."field" FROM "Shipment1" shipment_ WHERE (shipment_."sp_country" = ?)',
                     'SELECT user_role_."id_user_id",user_role_."id_role_id" FROM "user_role_composite" user_role_ INNER JOIN "role_composite" user_role_id_role_ ON user_role_."id_role_id"=user_role_id_role_."id"',
                     'SELECT user_role_."id_user_id",user_role_."id_role_id" FROM "user_role_composite" user_role_ INNER JOIN "user_composite" user_role_id_user_ ON user_role_."id_user_id"=user_role_id_user_."id" WHERE (user_role_."id_user_id" = ?)',
-                    'SELECT uidx."uuid",uidx."name",uidx."child_id",uidx."xyz",uidx."embedded_child_embedded_child2_id" FROM "uuid_entity" uidx WHERE (uidx."uuid" = ?)',
+                    'SELECT uidx."uuid",uidx."name",uidx."child_id",uidx."xyz",uidx."embedded_child_embedded_child2_id",uidx."nullable_value" FROM "uuid_entity" uidx WHERE (uidx."uuid" = ?)',
                     'SELECT user_role_."id_user_id",user_role_."id_role_id" FROM "user_role_composite" user_role_ WHERE (user_role_."id_user_id" = ? AND user_role_."id_role_id" = ?)',
                     'SELECT challenge_."id",challenge_."token",challenge_."authentication_id",challenge_authentication_device_."NAME" AS authentication_device_NAME,challenge_authentication_device_."USER_ID" AS authentication_device_USER_ID,challenge_authentication_device_user_."NAME" AS authentication_device_user_NAME,challenge_authentication_."DESCRIPTION" AS authentication_DESCRIPTION,challenge_authentication_."DEVICE_ID" AS authentication_DEVICE_ID FROM "challenge" challenge_ INNER JOIN "AUTHENTICATION" challenge_authentication_ ON challenge_."authentication_id"=challenge_authentication_."ID" INNER JOIN "DEVICE" challenge_authentication_device_ ON challenge_authentication_."DEVICE_ID"=challenge_authentication_device_."ID" INNER JOIN "USER" challenge_authentication_device_user_ ON challenge_authentication_device_."USER_ID"=challenge_authentication_device_user_."ID" WHERE (challenge_."id" = ?)',
                     'SELECT user_role_id_role_."id",user_role_id_role_."name" FROM "user_role_composite" user_role_ INNER JOIN "role_composite" user_role_id_role_ ON user_role_."id_role_id"=user_role_id_role_."id" WHERE (user_role_."id_user_id" = ?)',
@@ -424,7 +430,7 @@ interface MyRepository {
             ]
             query << [
                     'INSERT INTO "Shipment1" ("field","sp_country","sp_city") VALUES (?,?,?)',
-                    'INSERT INTO "uuid_entity" ("name","child_id","xyz","embedded_child_embedded_child2_id","uuid") VALUES (?,?,?,?,?)',
+                    'INSERT INTO "uuid_entity" ("name","child_id","xyz","embedded_child_embedded_child2_id","nullable_value","uuid") VALUES (?,?,?,?,?,?)',
                     'INSERT INTO "user_role_composite" ("id_user_id","id_role_id") VALUES (?,?)'
             ]
     }
@@ -446,7 +452,7 @@ interface MyRepository {
             ]
             query << [
                     'CREATE TABLE "Shipment1" ("sp_country" VARCHAR(255) NOT NULL,"sp_city" VARCHAR(255) NOT NULL,"field" VARCHAR(255) NOT NULL, PRIMARY KEY("sp_country","sp_city"));',
-                    'CREATE TABLE "uuid_entity" ("uuid" UUID,"name" VARCHAR(255) NOT NULL,"child_id" UUID,"xyz" UUID,"embedded_child_embedded_child2_id" UUID);',
+                    'CREATE TABLE "uuid_entity" ("uuid" UUID,"name" VARCHAR(255) NOT NULL,"child_id" UUID,"xyz" UUID,"embedded_child_embedded_child2_id" UUID,"nullable_value" UUID);',
                     'CREATE TABLE "user_role_composite" ("id_user_id" BIGINT NOT NULL,"id_role_id" BIGINT NOT NULL, PRIMARY KEY("id_user_id","id_role_id"));'
             ]
     }
@@ -458,7 +464,7 @@ interface MyRepository {
 
         then:
         statements[0] == 'CREATE TABLE "shipment_with_index" ("shipment_id" BIGINT PRIMARY KEY AUTO_INCREMENT,"field" VARCHAR(255) NOT NULL,"taxCode" VARCHAR(255) NOT NULL);'
-        statements[1] == 'CREATE UNIQUE INDEX idx_shipment_with_index_field_taxcode ON "shipment_with_index" (field, taxCode);'
+        statements[1] == 'CREATE UNIQUE INDEX "idx_shipment_with_index_field_taxcode" ON "shipment_with_index" (field, taxCode);'
 
         when:
         def productStatements = encoder.buildCreateTableStatements(getRuntimePersistentEntity(Product))
@@ -475,7 +481,8 @@ interface MyRepository {
 
         then:
         statements[0] == 'CREATE TABLE "shipment_with_index_on_fields" ("shipment_id" BIGINT PRIMARY KEY AUTO_INCREMENT,"field" VARCHAR(255) NOT NULL,"taxCode" VARCHAR(255) NOT NULL);'
-        statements[1] == 'CREATE UNIQUE INDEX idx_shipment_with_index_on_fields_field ON "shipment_with_index_on_fields" (field);CREATE INDEX idx_shipment_with_index_on_fields_taxcode ON "shipment_with_index_on_fields" (taxCode);'
+        statements[1] == 'CREATE UNIQUE INDEX "idx_shipment_with_index_on_fields_field" ON "shipment_with_index_on_fields" (field);'
+        statements[2] == 'CREATE INDEX "idx_shipment_with_index_on_fields_taxcode" ON "shipment_with_index_on_fields" (taxCode);'
     }
 
     void "test build create index from field annotation with composite indexes"() {
@@ -485,7 +492,7 @@ interface MyRepository {
 
         then:
         statements[0] == 'CREATE TABLE "shipment_with_index_on_fields_composite_indexes" ("shipment_id" BIGINT PRIMARY KEY AUTO_INCREMENT,"field" VARCHAR(255) NOT NULL,"taxCode" VARCHAR(255) NOT NULL);'
-        statements[1] == 'CREATE UNIQUE INDEX idx_shipment_with_index_on_fields_composite_indexes_field_taxcode ON "shipment_with_index_on_fields_composite_indexes" (field, taxCode);'
+        statements[1] == 'CREATE UNIQUE INDEX "idx_shipment_with_index_on_fields_composite_indexes_field_taxcode" ON "shipment_with_index_on_fields_composite_indexes" (field, taxCode);'
     }
 
     void "test build create index from index class annotation"() {
@@ -495,7 +502,8 @@ interface MyRepository {
 
         then:
         statements[0] == 'CREATE TABLE "shipment_with_index_on_class" ("shipment_id" BIGINT PRIMARY KEY AUTO_INCREMENT,"field" VARCHAR(255) NOT NULL,"taxCode" VARCHAR(255) NOT NULL);'
-        statements[1] == 'CREATE UNIQUE INDEX idx_shipment_with_index_on_class_field ON "shipment_with_index_on_class" (field);CREATE INDEX idx_shipment_with_index_on_class_taxcode ON "shipment_with_index_on_class" (taxCode);'
+        statements[1] == 'CREATE UNIQUE INDEX "idx_shipment_with_index_on_class_field" ON "shipment_with_index_on_class" (field);'
+        statements[2] == 'CREATE INDEX "idx_shipment_with_index_on_class_taxcode" ON "shipment_with_index_on_class" (taxCode);'
     }
 
     void "test build create index from index class annotation and field annotation"() {
@@ -505,7 +513,9 @@ interface MyRepository {
 
         then:
         statements[0] == 'CREATE TABLE "shipment_with_index_on_class_and_fields" ("shipment_id" BIGINT PRIMARY KEY AUTO_INCREMENT,"field2" VARCHAR(255) NOT NULL,"taxCode2" VARCHAR(255) NOT NULL,"field" VARCHAR(255) NOT NULL,"taxCode" VARCHAR(255) NOT NULL);'
-        statements[1] == 'CREATE UNIQUE INDEX idx_shipment_with_index_on_class_and_fields_field ON "shipment_with_index_on_class_and_fields" (field);CREATE INDEX idx_shipment_with_index_on_class_and_fields_taxcode ON "shipment_with_index_on_class_and_fields" (taxCode);CREATE UNIQUE INDEX idx_shipment_with_index_on_class_and_fields_field2_taxcode2 ON "shipment_with_index_on_class_and_fields" (field2, taxCode2);'
+        statements[1] == 'CREATE UNIQUE INDEX "idx_shipment_with_index_on_class_and_fields_field" ON "shipment_with_index_on_class_and_fields" (field);'
+        statements[2] == 'CREATE INDEX "idx_shipment_with_index_on_class_and_fields_taxcode" ON "shipment_with_index_on_class_and_fields" (taxCode);'
+        statements[3] == 'CREATE UNIQUE INDEX "idx_shipment_with_index_on_class_and_fields_field2_taxcode2" ON "shipment_with_index_on_class_and_fields" (field2, taxCode2);'
     }
 
     void "test build composite id query"() {

@@ -59,4 +59,10 @@ public interface PreparedQuery<E, R> extends PagedQuery<E>, StoredQuery<E, R>, P
         return Collections.emptyMap();
     }
 
+    /**
+     * Gets an indicator telling whether underlying query is raw query.
+     *
+     * @return true if it is raw query
+     */
+    boolean isRawQuery();
 }

@@ -15,6 +15,7 @@
  */
 package io.micronaut.data.jdbc.operations;
 
+import io.micronaut.aop.InvocationContext;
 import io.micronaut.context.BeanContext;
 import io.micronaut.context.annotation.EachBean;
 import io.micronaut.context.annotation.Parameter;
@@ -27,9 +28,7 @@ import io.micronaut.core.convert.ArgumentConversionContext;
 import io.micronaut.core.convert.ConversionContext;
 import io.micronaut.core.type.Argument;
 import io.micronaut.core.util.ArgumentUtils;
-import io.micronaut.data.annotation.Query;
 import io.micronaut.data.exceptions.DataAccessException;
-import io.micronaut.data.intercept.annotation.DataMethod;
 import io.micronaut.data.jdbc.config.DataJdbcConfiguration;
 import io.micronaut.data.jdbc.convert.JdbcConversionContext;
 import io.micronaut.data.jdbc.mapper.ColumnIndexResultSetReader;
@@ -324,11 +323,14 @@ public final class DefaultJdbcRepositoryOperations extends AbstractSqlRepository
                         return result;
                     } else if (rs.next()) {
                         if (preparedQuery.isDtoProjection()) {
-                            TypeMapper<ResultSet, R> introspectedDataMapper = new DTOMapper<>(
-                                    persistentEntity,
-                                    columnNameResultSetReader,
-                                    jsonCodec,
-                                    conversionService);
+                            boolean isRawQuery = preparedQuery.isRawQuery();
+                            TypeMapper<ResultSet, R> introspectedDataMapper = new SqlDTOMapper<>(
+                                persistentEntity,
+                                isRawQuery ? getEntity(preparedQuery.getResultType()) : persistentEntity,
+                                columnNameResultSetReader,
+                                jsonCodec,
+                                conversionService
+                            );
                             return introspectedDataMapper.map(rs, resultType);
                         } else {
                             Object v = columnIndexResultSetReader.readDynamic(rs, 1, preparedQuery.getResultDataType());
@@ -400,7 +402,7 @@ public final class DefaultJdbcRepositoryOperations extends AbstractSqlRepository
                 SqlTypeMapper<ResultSet, R> mapper;
                 RuntimePersistentEntity<T> persistentEntity = preparedQuery.getPersistentEntity();
                 if (dtoProjection) {
-                    boolean isRawQuery = preparedQuery.getAnnotationMetadata().stringValue(Query.class, DataMethod.META_MEMBER_RAW_QUERY).isPresent();
+                    boolean isRawQuery = preparedQuery.isRawQuery();
                     mapper = new SqlDTOMapper<>(
                             persistentEntity,
                             isRawQuery ? getEntity(preparedQuery.getResultType()) : persistentEntity,
@@ -879,7 +881,7 @@ public final class DefaultJdbcRepositoryOperations extends AbstractSqlRepository
     }
 
     private <T> JdbcOperationContext createContext(EntityOperation<T> operation, Connection connection, SqlStoredQuery<T, ?> storedQuery) {
-        return new JdbcOperationContext(operation.getAnnotationMetadata(), operation.getRepositoryType(), storedQuery.getDialect(), connection);
+        return new JdbcOperationContext(operation.getAnnotationMetadata(),  operation.getInvocationContext(), operation.getRepositoryType(), storedQuery.getDialect(), connection);
     }
 
     @Override
@@ -1001,7 +1003,7 @@ public final class DefaultJdbcRepositoryOperations extends AbstractSqlRepository
                 QUERY_LOG.debug("Executing SQL query: {}", storedQuery.getQuery());
             }
             try (PreparedStatement ps = prepare(ctx.connection, storedQuery)) {
-                storedQuery.bindParameters(new JdbcParameterBinder(ctx.connection, ps, ctx.dialect), null, entity, previousValues);
+                storedQuery.bindParameters(new JdbcParameterBinder(ctx.connection, ps, ctx.dialect), ctx.invocationContext, entity, previousValues);
                 rowsUpdated = ps.executeUpdate();
                 if (hasGeneratedId) {
                     try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
@@ -1083,7 +1085,7 @@ public final class DefaultJdbcRepositoryOperations extends AbstractSqlRepository
                 if (d.vetoed) {
                     continue;
                 }
-                storedQuery.bindParameters(new JdbcParameterBinder(ctx.connection, stmt, ctx.dialect), null, d.entity, d.previousValues);
+                storedQuery.bindParameters(new JdbcParameterBinder(ctx.connection, stmt, ctx.dialect), ctx.invocationContext, d.entity, d.previousValues);
                 stmt.addBatch();
             }
         }
@@ -1132,11 +1134,36 @@ public final class DefaultJdbcRepositoryOperations extends AbstractSqlRepository
 
         public final Connection connection;
         public final Dialect dialect;
+        private final InvocationContext<?, ?> invocationContext;
 
+        /**
+         * The old deprecated constructor.
+         *
+         * @param annotationMetadata the annotation metadata
+         * @param repositoryType the repository type
+         * @param dialect the dialect
+         * @param connection the connection
+         * @deprecated Use constructor with {@link InvocationContext}.
+         */
+        @Deprecated
         public JdbcOperationContext(AnnotationMetadata annotationMetadata, Class<?> repositoryType, Dialect dialect, Connection connection) {
+            this(annotationMetadata, null , repositoryType, dialect, connection);
+        }
+
+        /**
+         * The default constructor.
+         *
+         * @param annotationMetadata the annotation metadata
+         * @param invocationContext the invocation context
+         * @param repositoryType the repository type
+         * @param dialect the dialect
+         * @param connection the connection
+         */
+        public JdbcOperationContext(AnnotationMetadata annotationMetadata, InvocationContext<?, ?> invocationContext, Class<?> repositoryType, Dialect dialect, Connection connection) {
             super(annotationMetadata, repositoryType);
             this.dialect = dialect;
             this.connection = connection;
+            this.invocationContext = invocationContext;
         }
     }
 

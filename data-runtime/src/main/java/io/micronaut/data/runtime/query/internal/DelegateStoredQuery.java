@@ -169,4 +169,9 @@ public interface DelegateStoredQuery<E, R> extends StoredQuery<E, R> {
     default int[] getIndexedParameterAutoPopulatedPreviousPropertyIndexes() {
         return getStoredQueryDelegate().getIndexedParameterAutoPopulatedPreviousPropertyIndexes();
     }
+
+    @Override
+    default boolean isRawQuery() {
+        return getStoredQueryDelegate().isRawQuery();
+    }
 }
