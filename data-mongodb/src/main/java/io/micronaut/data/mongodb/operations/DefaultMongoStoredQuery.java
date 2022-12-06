@@ -84,7 +84,7 @@ final class DefaultMongoStoredQuery<E, R, Dtb> extends DefaultBindableParameters
     private final CodecRegistry codecRegistry;
     private final AttributeConverterRegistry attributeConverterRegistry;
     private final RuntimeEntityRegistry runtimeEntityRegistry;
-    private final ConversionService<?> conversionService;
+    private final ConversionService conversionService;
     private final Dtb database;
     private final RuntimePersistentEntity<E> persistentEntity;
     private final UpdateData updateData;
@@ -97,7 +97,7 @@ final class DefaultMongoStoredQuery<E, R, Dtb> extends DefaultBindableParameters
                             CodecRegistry codecRegistry,
                             AttributeConverterRegistry attributeConverterRegistry,
                             RuntimeEntityRegistry runtimeEntityRegistry,
-                            ConversionService<?> conversionService,
+                            ConversionService conversionService,
                             RuntimePersistentEntity<E> persistentEntity,
                             Dtb database) {
         this(storedQuery,
@@ -116,7 +116,7 @@ final class DefaultMongoStoredQuery<E, R, Dtb> extends DefaultBindableParameters
                             CodecRegistry codecRegistry,
                             AttributeConverterRegistry attributeConverterRegistry,
                             RuntimeEntityRegistry runtimeEntityRegistry,
-                            ConversionService<?> conversionService,
+                            ConversionService conversionService,
                             RuntimePersistentEntity<E> persistentEntity,
                             Dtb database,
                             DataMethod.OperationType operationType,

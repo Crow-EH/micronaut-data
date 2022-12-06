@@ -98,7 +98,7 @@ final class MongoReactiveFactory {
         }
 
         @Override
-        public ConversionService<?> getConversionService() {
+        public ConversionService getConversionService() {
             return reactiveOperations.getConversionService();
         }
 

@@ -99,7 +99,7 @@ abstract class AbstractMongoRepositoryOperations<Dtb> extends AbstractRepository
                                                 List<MediaTypeCodec> codecs,
                                                 DateTimeProvider<Object> dateTimeProvider,
                                                 RuntimeEntityRegistry runtimeEntityRegistry,
-                                                DataConversionService<?> conversionService,
+                                                DataConversionService conversionService,
                                                 AttributeConverterRegistry attributeConverterRegistry) {
         super(codecs, dateTimeProvider, runtimeEntityRegistry, conversionService, attributeConverterRegistry);
         Collection<BeanDefinition<GenericRepository>> beanDefinitions = beanContext
@@ -194,7 +194,7 @@ abstract class AbstractMongoRepositoryOperations<Dtb> extends AbstractRepository
                 }
 
                 @Override
-                public ConversionService<?> getConversionService() {
+                public ConversionService getConversionService() {
                     return conversionService;
                 }
 

@@ -153,7 +153,7 @@ public final class DefaultReactiveCosmosRepositoryOperations extends AbstractRep
     public DefaultReactiveCosmosRepositoryOperations(List<MediaTypeCodec> codecs,
                                                      DateTimeProvider<Object> dateTimeProvider,
                                                      RuntimeEntityRegistry runtimeEntityRegistry,
-                                                     DataConversionService<?> conversionService,
+                                                     DataConversionService conversionService,
                                                      AttributeConverterRegistry attributeConverterRegistry,
                                                      CosmosAsyncClient cosmosAsyncClient,
                                                      CosmosSerde cosmosSerde,
@@ -274,7 +274,8 @@ public final class DefaultReactiveCosmosRepositoryOperations extends AbstractRep
             CosmosPagedFlux<ObjectNode> result = getCosmosResults(preparedQuery, querySpec, ObjectNode.class);
             Argument<R> argument;
             if (dtoProjection) {
-                argument = Argument.of(ReflectionUtils.getWrapperType(preparedQuery.getResultType()));
+                //noinspection unchecked
+                argument = (Argument<R>) Argument.of(ReflectionUtils.getWrapperType(preparedQuery.getResultType()));
                 return result.map(item -> cosmosSerde.deserialize(item, argument)).onErrorResume(e ->  Flux.error(new CosmosAccessException(FAILED_TO_QUERY_ITEMS + e.getMessage(), e)));
             } else {
                 argument = Argument.of(preparedQuery.getResultType());
@@ -472,7 +473,7 @@ public final class DefaultReactiveCosmosRepositoryOperations extends AbstractRep
                     return Flux.error(new NonUniqueResultException());
                 }
                 if (preparedQuery.isDtoProjection()) {
-                    Class<R> wrapperType = ReflectionUtils.getWrapperType(preparedQuery.getResultType());
+                    @SuppressWarnings("unchecked") Class<R> wrapperType = (Class<R>) ReflectionUtils.getWrapperType(preparedQuery.getResultType());
                     return Mono.just(cosmosSerde.deserialize(item, Argument.of(wrapperType)));
                 }
                 RuntimePersistentEntity<T> persistentEntity = runtimeEntityRegistry.getEntity(preparedQuery.getRootEntity());
@@ -1099,7 +1100,7 @@ public final class DefaultReactiveCosmosRepositoryOperations extends AbstractRep
          * @param insert              The insert
          */
         protected CosmosReactiveEntityOperation(EntityEventListener<Object> entityEventListener,
-                                                ConversionService<?> conversionService,
+                                                ConversionService conversionService,
                                                 CosmosReactiveOperationContext<T> ctx,
                                                 RuntimePersistentEntity<T> persistentEntity,
                                                 T entity,
@@ -1138,7 +1139,7 @@ public final class DefaultReactiveCosmosRepositoryOperations extends AbstractRep
          * @param insert              Whether the operation is inserting
          */
         protected CosmosReactiveEntitiesOperation(EntityEventListener<Object> entityEventListener,
-                                                  ConversionService<?> conversionService,
+                                                  ConversionService conversionService,
                                                   CosmosReactiveOperationContext<T> ctx,
                                                   RuntimePersistentEntity<T> persistentEntity,
                                                   Iterable<T> entities,
@@ -1166,7 +1167,7 @@ public final class DefaultReactiveCosmosRepositoryOperations extends AbstractRep
         private final String versionField;
 
         protected CosmosReactiveBulkEntitiesOperation(EntityEventListener<Object> entityEventListener,
-                                                      ConversionService<?> conversionService,
+                                                      ConversionService conversionService,
                                                       CosmosReactiveOperationContext<T> ctx,
                                                       RuntimePersistentEntity<T> persistentEntity,
                                                       Iterable<T> entities,

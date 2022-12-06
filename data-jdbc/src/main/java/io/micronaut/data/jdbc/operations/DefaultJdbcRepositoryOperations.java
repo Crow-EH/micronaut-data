@@ -168,7 +168,7 @@ public final class DefaultJdbcRepositoryOperations extends AbstractSqlRepository
                                               List<MediaTypeCodec> codecs,
                                               @NonNull DateTimeProvider dateTimeProvider,
                                               RuntimeEntityRegistry entityRegistry,
-                                              DataConversionService<?> conversionService,
+                                              DataConversionService conversionService,
                                               AttributeConverterRegistry attributeConverterRegistry) {
         super(
                 dataSourceName,
