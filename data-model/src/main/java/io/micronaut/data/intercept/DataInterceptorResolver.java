@@ -36,6 +36,8 @@ import io.micronaut.inject.InjectionPoint;
 import io.micronaut.inject.qualifiers.Qualifiers;
 import jakarta.inject.Singleton;
 
+import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -105,8 +107,16 @@ final class DataInterceptorResolver {
         } catch (NoSuchBeanException e) {
             throw new ConfigurationException("No backing RepositoryOperations configured for repository. Check your configuration and try again", e);
         }
-        final BeanIntrospection<Object> introspection = BeanIntrospector.SHARED.findIntrospections(ref ->
-            ref.isPresent() && interceptorType.isAssignableFrom(ref.getBeanType())).stream().findFirst().orElseThrow(() ->
+        Collection<BeanIntrospection<Object>> candidates = BeanIntrospector.SHARED.findIntrospections(ref -> {
+            if (ref.isPresent()) {
+                Class<?> beanType = ref.getBeanType();
+                if (interceptorType.isAssignableFrom(beanType) && !Modifier.isAbstract(beanType.getModifiers())) {
+                    return true;
+                }
+            }
+            return false;
+        });
+        final BeanIntrospection<Object> introspection = candidates.stream().findFirst().orElseThrow(() ->
             new DataAccessException("No Data interceptor found for type: " + interceptorType)
         );
 
