@@ -4,10 +4,11 @@ plugins {
 }
 
 micronaut {
-    version = '3.7.3'
+    version = micronautVersion
     testResources {
         enabled = true
         inferClasspath = false
+        version = '1.2.1'
     }
 }
 micronautBuild {
