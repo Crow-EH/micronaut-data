@@ -1,9 +1,9 @@
 [versions]
 micronaut = "4.0.0-SNAPSHOT"
-micronaut-azure = "3.5.0"
+micronaut-azure = "3.6.0"
 micronaut-docs = "2.0.0"
 micronaut-gradle-plugin = "3.6.6"
-micronaut-mongo = "4.4.0"
+micronaut-mongo = "4.6.0"
 micronaut-reactor = "3.0.0-SNAPSHOT"
 micronaut-rxjava2 = "2.0.0-SNAPSHOT"
 micronaut-r2dbc = "4.0.1-SNAPSHOT"
